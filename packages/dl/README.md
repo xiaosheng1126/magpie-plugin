@@ -20,7 +20,7 @@ magpie plugin add /Users/huangdongsheng/Projects/magpie-dl
 - 每个 Magpie 账号使用自己的 OAuth 登录态，不串用 CLI 当前 token。
 - 请求失败不自动重试。429、5xx、401 原样交给 Magpie。
 - 每个账号 `maxConcurrency: 1`，不硬编码 RPM。
-- 额度读取覆盖周 token/美元额度、模型池、预算、充值余额、邀请奖励和排队状态。
+- 额度只显示 GPT-6 与 DEEPSEEK 两项。
 - 不输出 token，错误脱敏。
 - 聊天请求体与官方 CLI 对齐；未知模型能力默认关闭。
 

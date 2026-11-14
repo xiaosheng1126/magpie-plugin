@@ -126,62 +126,17 @@ function formatUsd(value) {
 
 function allowanceSummary(me) {
   const allowance = isRecord(me?.allowance) ? me.allowance : {};
-  const totalTokens = nonNegativeNumber(allowance.tokensPerWeek);
-  const reportedRemaining = finiteNumber(allowance.remaining);
-  const remainingTokens = reportedRemaining === null
-    ? Math.max(0, totalTokens - nonNegativeNumber(allowance.usedThisWeek))
-    : Math.max(0, Math.min(totalTokens, reportedRemaining));
-  const usedTokens = finiteNumber(allowance.usedThisWeek) ?? Math.max(0, totalTokens - remainingTokens);
   const windows = [];
-
-  if (totalTokens > 0) {
-    windows.push({
-      name: "每周免费额度 (Weekly Allowance)",
-      used: percentage(usedTokens, totalTokens),
-      display: `${formatTokens(remainingTokens)} / ${formatTokens(totalTokens)} tokens 剩余`,
-      resetsAt: allowance.resetsAt
-    });
-  }
-
-  const weeklyUsdLimit = allowance.usdPerWeek === null ? null : nonNegativeNumber(allowance.usdPerWeek);
-  if (weeklyUsdLimit === null || weeklyUsdLimit > 0) {
-    const spentUsd = nonNegativeNumber(allowance.spentUsdThisWeek);
-    windows.push({
-      name: "每周美元额度 (Weekly USD Allowance)",
-      used: weeklyUsdLimit === null ? 0 : percentage(spentUsd, weeklyUsdLimit),
-      display: weeklyUsdLimit === null
-        ? `${formatUsd(spentUsd)} used · 无上限`
-        : `${formatUsd(Math.max(0, weeklyUsdLimit - spentUsd))} / ${formatUsd(weeklyUsdLimit)} 剩余`,
-      resetsAt: allowance.resetsAt
-    });
-  }
-
-  if (isRecord(me?.pools)) {
-    for (const [poolKey, pool] of Object.entries(me.pools)) {
-      if (!isRecord(pool) || !(Number(pool.tokensPerWeek) > 0)) continue;
-      const poolTotal = nonNegativeNumber(pool.tokensPerWeek);
-      const reportedPoolRemaining = finiteNumber(pool.remaining);
-      const poolRemaining = reportedPoolRemaining === null
-        ? Math.max(0, poolTotal - nonNegativeNumber(pool.usedThisWeek))
-        : Math.max(0, Math.min(poolTotal, reportedPoolRemaining));
-      const poolUsed = finiteNumber(pool.usedThisWeek) ?? Math.max(0, poolTotal - poolRemaining);
-      windows.push({
-        name: `池限额 · ${poolKey.toUpperCase()} (${(poolTotal / 1_000_000).toFixed(0)}M)`,
-        used: percentage(poolUsed, poolTotal),
-        display: `${formatTokens(poolRemaining)} / ${formatTokens(poolTotal)} tokens 剩余`,
-        resetsAt: pool.resetsAt || allowance.resetsAt
-      });
-    }
-  }
 
   if (isRecord(me?.budgets)) {
     for (const [familyKey, budget] of Object.entries(me.budgets)) {
+      if (familyKey !== "gpt6" && familyKey !== "deepseek") continue;
       if (!isRecord(budget)) continue;
       const usdLimit = budget.usdPerWeek === null ? null : nonNegativeNumber(budget.usdPerWeek);
       const spentUsd = nonNegativeNumber(budget.spentUsd);
       if (usdLimit !== null && !(usdLimit > 0)) continue;
       windows.push({
-        name: `美元预算 · ${familyKey === "gpt6" ? "GPT-6" : familyKey.toUpperCase()}`,
+        name: familyKey === "gpt6" ? "GPT-6" : "DEEPSEEK",
         used: usdLimit === null ? 0 : percentage(spentUsd, usdLimit),
         display: usdLimit === null
           ? `${formatUsd(spentUsd)} used · 无上限`
@@ -189,40 +144,6 @@ function allowanceSummary(me) {
         resetsAt: allowance.resetsAt
       });
     }
-  }
-
-  if (nonNegativeNumber(me?.topupTokensLeft) > 0) {
-    windows.push({
-      name: "充值 token 余额",
-      used: 0,
-      display: `${formatTokens(me.topupTokensLeft)} tokens`
-    });
-  }
-
-  if (nonNegativeNumber(me?.topupUsdLeft) > 0) {
-    windows.push({
-      name: "充值美元余额",
-      used: 0,
-      display: formatUsd(me.topupUsdLeft),
-      resetsAt: me?.topupUsdExpiresAt
-    });
-  }
-
-  if (isRecord(me?.referral) && nonNegativeNumber(me.referral.bonusTokensPerWeek) > 0) {
-    windows.push({
-      name: "邀请奖励 · 每周",
-      used: 0,
-      display: `+${formatTokens(me.referral.bonusTokensPerWeek)} tokens/周`
-    });
-  }
-
-  if (isRecord(me?.queue) && Number(me.queue.position) >= 1) {
-    windows.push({
-      name: "免费额度排队",
-      used: 0,
-      display: `第 ${Math.round(Number(me.queue.position))} 位${me.queue.etaAt ? ` · 预计 ${me.queue.etaAt}` : ""}`,
-      resetsAt: me.queue.etaAt
-    });
   }
 
   const planName = me?.plan === "pro" ? "DL Pro" : me?.plan === "free" ? "DL Free" : "DL";
