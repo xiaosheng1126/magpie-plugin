@@ -1,0 +1,28 @@
+{
+  "name": "opencode-intern-tokenplan-auth",
+  "version": "0.1.0",
+  "description": "OpenCode / magpie provider plugin for 书生·端砚 Intern InkStone TokenPlan (DeepSeek-V4.1, GLM-5.3, Kimi-K3.1, Qwen3.8, Intern-S2, ...)",
+  "type": "module",
+  "main": "./index.mjs",
+  "exports": "./index.mjs",
+  "files": ["index.mjs", "README.md"],
+  "scripts": {
+    "test": "node test.mjs"
+  },
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "magpie",
+    "intern",
+    "inkstone",
+    "tokenplan",
+    "openxlab",
+    "deepseek",
+    "glm",
+    "kimi"
+  ],
+  "license": "MIT",
+  "magpie": {
+    "maxConcurrency": 2
+  }
+}

@@ -1,0 +1,32 @@
+{
+  "name": "opencode-dl-auth",
+  "version": "0.1.0",
+  "description": "Magpie/OpenCode provider plugin for Directionally Local (dl, re-uses the dl CLI sign-in)",
+  "type": "module",
+  "main": "./opencode.mjs",
+  "exports": {
+    ".": "./opencode2.mjs"
+  },
+  "files": [
+    "opencode.mjs",
+    "opencode2.mjs",
+    "plugins",
+    "shared",
+    "README.md"
+  ],
+  "scripts": {
+    "check": "node --check index.mjs && node --check opencode.mjs && node --check opencode2.mjs && node --check shared/core.mjs && node --check plugins/dl/index.mjs",
+    "test": "node --test"
+  },
+  "keywords": [
+    "magpie",
+    "opencode",
+    "provider",
+    "directionally-local",
+    "dl"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}
