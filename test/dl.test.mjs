@@ -124,7 +124,7 @@ test("dl chat omits tool fields when no tools are supplied", async () => {
   });
 });
 
-test("dl usage maps weekly, pool, budget, top-up, referral and queue balances", async () => {
+test("dl usage shows only GPT-6 and DEEPSEEK balances", async () => {
   const root = mkdtempSync(join(tmpdir(), "dl-usage-"));
   const file = configFile(root);
   const now = 1_300_000;
@@ -172,56 +172,16 @@ test("dl usage maps weekly, pool, budget, top-up, referral and queue balances", 
   assert.equal(usage.signIn, "kept");
   assert.deepEqual(usage.windows, [
     {
-      name: "每周免费额度 (Weekly Allowance)",
-      used: 8,
-      display: "46,000,000 / 50,000,000 tokens 剩余",
-      resetsAt
-    },
-    {
-      name: "每周美元额度 (Weekly USD Allowance)",
-      used: 25,
-      display: "$15.00 / $20.00 剩余",
-      resetsAt
-    },
-    {
-      name: "池限额 · LUNA (30M)",
-      used: 10,
-      display: "27,000,000 / 30,000,000 tokens 剩余",
-      resetsAt
-    },
-    {
-      name: "美元预算 · GPT-6",
+      name: "GPT-6",
       used: 25,
       display: "$7.50 / $10.00 剩余",
       resetsAt
     },
     {
-      name: "美元预算 · DEEPSEEK",
+      name: "DEEPSEEK",
       used: 0,
       display: "$1.25 used · 无上限",
       resetsAt
-    },
-    {
-      name: "充值 token 余额",
-      used: 0,
-      display: "1,500,000 tokens"
-    },
-    {
-      name: "充值美元余额",
-      used: 0,
-      display: "$2.50",
-      resetsAt: "2026-12-01T00:00:00.000Z"
-    },
-    {
-      name: "邀请奖励 · 每周",
-      used: 0,
-      display: "+10,000,000 tokens/周"
-    },
-    {
-      name: "免费额度排队",
-      used: 0,
-      display: "第 3 位 · 预计 2026-11-15T00:10:00.000Z",
-      resetsAt: "2026-11-15T00:10:00.000Z"
     }
   ]);
 });
