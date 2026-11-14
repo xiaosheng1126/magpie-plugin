@@ -395,6 +395,28 @@ export const FreePiAuthPlugin = async ({ client } = {}) => {
                 }
               }
 
+              // 3. Explain the version gate (426 upgrade_required) instead of leaking an opaque status
+              if (res.status === 426) {
+                const clone = res.clone();
+                let bodyText = "";
+                try {
+                  bodyText = await clone.text();
+                } catch {}
+                let msg = "";
+                try {
+                  const parsed = JSON.parse(bodyText);
+                  msg = parsed?.error?.message || parsed?.message || "";
+                } catch {}
+                const need = /minimum \(([0-9.]+)\)/i.exec(msg);
+                const text = need
+                  ? `free-pi-cli 版本过低：服务端要求 ≥ ${need[1]}，当前插件读到 ${cliVersion}。请在终端运行 \`npx free-pi-cli@latest\` 升级后重试。`
+                  : `free-pi 拒绝请求（HTTP 426 upgrade_required）：${msg || "请运行 npx free-pi-cli@latest 升级 free-pi-cli 后重试"}`;
+                return new Response(
+                  JSON.stringify({ error: { message: text, type: "free_pi_error", code: "upgrade_required" } }),
+                  { status: 426, headers: { "Content-Type": "application/json" } }
+                );
+              }
+
               return res;
             });
           }
