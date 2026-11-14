@@ -289,7 +289,7 @@ function accountUsage(account) {
   const quota = subscription || access;
   const unlimited = Boolean(quota.unlimited);
   const limit = Number(quota.tokenLimit ?? quota.limit ?? 0);
-  const used = Number(quota.tokensUsed ?? quota.used ?? 0);
+  const used = Number(quota.used ?? quota.tokensUsed ?? 0);
   const percent = unlimited || !(limit > 0) ? 0 : Math.max(0, Math.min(100, Math.round((used / limit) * 100)));
   const plan = subscription?.label || access.planLabel || "FREE";
   const balance = Number(account?.balanceUsd ?? 0);
@@ -491,7 +491,8 @@ export function createApiNexPlugin({
         try {
           const { token } = await tokenFor(getAuth);
           if (!token) return { error: "not signed in", windows: [] };
-          return accountUsage(await fetchAccount({ apiOrigin: apiOrigin(env), fetchImpl, token }));
+          const fetched = await fetchAccount({ apiOrigin: apiOrigin(env), fetchImpl, token });
+          return accountUsage(fetched?.account ?? fetched);
         } catch (error) {
           return {
             error: safeErrorMessage(error, []),
