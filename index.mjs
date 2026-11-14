@@ -225,7 +225,10 @@ export const FreePiAuthPlugin = async ({ client } = {}) => {
         if (!token) return provider.models;
         const live = await fetchLiveModels(token);
         if (live && live.length > 0) {
-          return Object.fromEntries(live.map((m) => [m.id, toMagpieModel(m)]));
+          // `section: "defense"` models are the official CLI's separate free-pi-defense
+          // provider (abliterated/uncensored, 20x-60x credits), not coding models.
+          const main = live.filter((m) => m.section !== "defense");
+          return Object.fromEntries((main.length > 0 ? main : live).map((m) => [m.id, toMagpieModel(m)]));
         }
         return provider.models;
       }
