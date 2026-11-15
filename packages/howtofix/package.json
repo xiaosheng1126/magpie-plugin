@@ -1,0 +1,27 @@
+{
+  "name": "opencode-howtofix-auth",
+  "version": "0.1.0",
+  "description": "Magpie / OpenCode provider plugin for HowToFix CLI Grok models, reusing the local HowToFix login",
+  "type": "module",
+  "main": "./index.mjs",
+  "exports": "./index.mjs",
+  "files": [
+    "index.mjs",
+    "README.md"
+  ],
+  "scripts": {
+    "check": "node --check index.mjs",
+    "test": "node --test test.mjs"
+  },
+  "keywords": [
+    "magpie",
+    "opencode",
+    "provider",
+    "howtofix",
+    "grok"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}

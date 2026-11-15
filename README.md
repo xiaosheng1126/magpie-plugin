@@ -1,8 +1,8 @@
 # magpie-plugin
 
-五个 [magpie](https://github.com/yetone/magpie) / OpenCode provider 插件放在一个仓库里。
+六个 [magpie](https://github.com/yetone/magpie) / OpenCode provider 插件放在一个仓库里。
 
-**只是住在一起**：五个包互不依赖，各自能单独安装、单独升级。合并的原因只有一个——不想开五个仓库。
+**只是住在一起**：六个包互不依赖，各自能单独安装、单独升级。合并的原因只有一个——不想开六个仓库。
 
 ## 安装
 
@@ -12,6 +12,7 @@ magpie plugin add github:xiaosheng1126/magpie-plugin#apinex
 magpie plugin add github:xiaosheng1126/magpie-plugin#freepi
 magpie plugin add github:xiaosheng1126/magpie-plugin#intern
 magpie plugin add github:xiaosheng1126/magpie-plugin#clixad
+magpie plugin add github:xiaosheng1126/magpie-plugin#howtofix
 ```
 
 装完 `magpie plugin update` 拉最新，然后按各包的 README 登录。
@@ -25,6 +26,7 @@ magpie plugin add github:xiaosheng1126/magpie-plugin#clixad
 | `freepi` | `opencode-freepi-auth` | `free-pi` | 复用 `free-pi-cli` 登录态 |
 | `intern` | `opencode-intern-tokenplan-auth` | `intern` | 粘 `uaa-token`，插件自动开通 API Key（多账号） |
 | `clixad` | `opencode-clixad-auth` | `clixad` | 复用 `clixad` CLI 登录态 |
+| `howtofix` | `opencode-howtofix-auth` | `howtofix` | 复用 `howtofix` CLI 登录态，提供 Grok |
 
 各包的细节、额度规则、已知坑都在 `packages/<name>/README.md`。
 
@@ -35,7 +37,7 @@ magpie 装 GitHub 插件时读的是**仓库根**的 `package.json`，`github:ow
 `main` 是开发分支，分支是发布产物：
 
 ```sh
-./tools/publish.sh            # 五个都推
+./tools/publish.sh            # 六个都推
 ./tools/publish.sh intern     # 只推一个
 ```
 
@@ -47,6 +49,7 @@ packages/apinex   APInex
 packages/freepi   free-pi
 packages/intern   Intern InkStone（书生·端砚 TokenPlan）
 packages/clixad   Clixad
+packages/howtofix HowToFix（Grok）
 tools/publish.sh  子树拆分 + 推分支
 AGENTS.md         目录约定与发布纪律
 ```
@@ -55,4 +58,4 @@ AGENTS.md         目录约定与发布纪律
 
 ## 非官方
 
-五个插件都是逆向实现，与各自平台官方无关。使用前请自行确认符合服务条款。
+六个插件都是逆向实现，与各自平台官方无关。使用前请自行确认符合服务条款。

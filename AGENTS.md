@@ -1,6 +1,6 @@
 # magpie-plugin
 
-五个 magpie / OpenCode provider 插件的合居仓库。**合居只是为了少几个仓库，五个插件之间没有任何依赖。**
+六个 magpie / OpenCode provider 插件的合居仓库。**合居只是为了少几个仓库，六个插件之间没有任何依赖。**
 
 ## 目录约定
 
@@ -28,11 +28,12 @@ tools/publish.sh        把 packages/<name> 拆成同名分支推上去
 | `packages/freepi` | `github:xiaosheng1126/magpie-plugin#freepi` |
 | `packages/intern` | `github:xiaosheng1126/magpie-plugin#intern` |
 | `packages/clixad` | `github:xiaosheng1126/magpie-plugin#clixad` |
+| `packages/howtofix` | `github:xiaosheng1126/magpie-plugin#howtofix` |
 
 改完代码必须推分支，否则用户装到的还是老的：
 
 ```sh
-./tools/publish.sh            # 五个都推
+./tools/publish.sh            # 六个都推
 ./tools/publish.sh intern     # 只推一个
 ```
 
