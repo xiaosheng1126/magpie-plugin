@@ -301,3 +301,205 @@ test("loader redacts a token repeated in a network error", async () => {
     }
   );
 });
+
+test("usage reports the remaining HowToFix USD balance", async () => {
+  const token = "balance-token";
+  const paths = fixtureHome({ credentials: freshCredentials(token) });
+  const calls = [];
+  const plugin = createHowtofixPlugin({
+    env: {},
+    homeDir: paths.home,
+    cliPackageFile: paths.cliPackageFile,
+    fetchImpl: async (input, init = {}) => {
+      const url = String(input);
+      calls.push({ url, headers: new Headers(init.headers) });
+      if (url.endsWith("/api/status")) {
+        return new Response(JSON.stringify({
+          data: { quota_display_type: "USD", quota_per_unit: 500000 }
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (url.endsWith("/dashboard/billing/subscription")) {
+        return new Response(JSON.stringify({
+          hard_limit_usd: 55,
+          soft_limit_usd: 55
+        }), { status: 200, headers: { "content-type": "application/json" } });
+      }
+      if (url.endsWith("/dashboard/billing/usage")) {
+        return new Response(JSON.stringify({ total_usage: 688.38 }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      throw new Error(`unexpected request: ${url}`);
+    }
+  });
+
+  const usage = await plugin.auth.usage(async () => ({}));
+
+  assert.equal(usage.plan, "HowToFix CLI · USD");
+  assert.equal(usage.user, "HowToFix user");
+  assert.equal(usage.signIn, "kept");
+  assert.equal(usage.windows.length, 1);
+  assert.equal(usage.windows[0].name, "账户余额");
+  assert.equal(usage.windows[0].used, 12.516);
+  assert.equal(usage.windows[0].display, "$48.12 可用 · $6.88 已用 / $55.00 总额");
+  assert.equal(calls.length, 3);
+  assert.equal(
+    calls.find((call) => call.url.endsWith("/api/status")).headers.has("authorization"),
+    false
+  );
+  for (const suffix of ["/dashboard/billing/subscription", "/dashboard/billing/usage"]) {
+    const call = calls.find((item) => item.url.endsWith(suffix));
+    assert.equal(call.headers.get("authorization"), `Bearer ${token}`);
+  }
+});
+
+test("usage reports an unlimited HowToFix balance without inventing a percentage", async () => {
+  const paths = fixtureHome({ credentials: freshCredentials("unlimited-token") });
+  const plugin = createHowtofixPlugin({
+    env: {},
+    homeDir: paths.home,
+    cliPackageFile: paths.cliPackageFile,
+    fetchImpl: async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/status")) {
+        return new Response(JSON.stringify({ data: { quota_display_type: "USD" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      if (url.endsWith("/dashboard/billing/subscription")) {
+        return new Response(JSON.stringify({ hard_limit_usd: 100000000 }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      return new Response(JSON.stringify({ total_usage: 0 }), {
+        status: 200,
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const usage = await plugin.auth.usage(async () => ({}));
+
+  assert.equal(usage.windows[0].used, 0);
+  assert.equal(usage.windows[0].display, "unlimited");
+});
+
+test("usage requires a HowToFix login without sending a request", async () => {
+  const paths = fixtureHome();
+  let calls = 0;
+  const plugin = createHowtofixPlugin({
+    env: {},
+    homeDir: paths.home,
+    cliPackageFile: paths.cliPackageFile,
+    fetchImpl: async () => {
+      calls++;
+      throw new Error("must not fetch without a token");
+    }
+  });
+
+  const usage = await plugin.auth.usage(async () => ({}));
+
+  assert.equal(calls, 0);
+  assert.equal(usage.signIn, "expired");
+  assert.match(usage.error, /howtofix.*\/connect/i);
+  assert.deepEqual(usage.windows, []);
+});
+
+test("usage turns a billing 401 into reconnect guidance without exposing the token", async () => {
+  const token = "expired-billing-token";
+  const paths = fixtureHome({ credentials: freshCredentials(token) });
+  const plugin = createHowtofixPlugin({
+    env: {},
+    homeDir: paths.home,
+    cliPackageFile: paths.cliPackageFile,
+    fetchImpl: async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/status")) {
+        return new Response(JSON.stringify({ data: { quota_display_type: "USD" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      if (url.endsWith("/dashboard/billing/subscription")) {
+        return new Response(JSON.stringify({ error: { message: `rejected ${token}` } }), {
+          status: 401,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      return new Response(JSON.stringify({ total_usage: 0 }), {
+        status: 200,
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const usage = await plugin.auth.usage(async () => ({}));
+
+  assert.equal(usage.signIn, "expired");
+  assert.match(usage.error, /howtofix.*\/connect/i);
+  assert.equal(JSON.stringify(usage).includes(token), false);
+  assert.deepEqual(usage.windows, []);
+});
+
+test("usage redacts a token repeated in a balance network error", async () => {
+  const token = "balance-network-token";
+  const paths = fixtureHome({ credentials: freshCredentials(token) });
+  const plugin = createHowtofixPlugin({
+    env: {},
+    homeDir: paths.home,
+    cliPackageFile: paths.cliPackageFile,
+    fetchImpl: async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/status")) {
+        return new Response(JSON.stringify({ data: { quota_display_type: "USD" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      throw new Error(`socket refused ${token}`);
+    }
+  });
+
+  const usage = await plugin.auth.usage(async () => ({}));
+
+  assert.match(usage.error, /读取 HowToFix 余额失败/);
+  assert.equal(usage.error.includes(token), false);
+  assert.match(usage.error, /\[REDACTED\]/);
+  assert.deepEqual(usage.windows, []);
+});
+
+test("usage does not report a full balance when the used-credit endpoint fails", async () => {
+  const paths = fixtureHome({ credentials: freshCredentials("partial-balance-token") });
+  const plugin = createHowtofixPlugin({
+    env: {},
+    homeDir: paths.home,
+    cliPackageFile: paths.cliPackageFile,
+    fetchImpl: async (input) => {
+      const url = String(input);
+      if (url.endsWith("/api/status")) {
+        return new Response(JSON.stringify({ data: { quota_display_type: "USD" } }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      if (url.endsWith("/dashboard/billing/subscription")) {
+        return new Response(JSON.stringify({ hard_limit_usd: 55 }), {
+          status: 200,
+          headers: { "content-type": "application/json" }
+        });
+      }
+      return new Response(JSON.stringify({ error: "usage unavailable" }), {
+        status: 503,
+        headers: { "content-type": "application/json" }
+      });
+    }
+  });
+
+  const usage = await plugin.auth.usage(async () => ({}));
+
+  assert.match(usage.error, /dashboard\/billing\/usage.*503/);
+  assert.deepEqual(usage.windows, []);
+});

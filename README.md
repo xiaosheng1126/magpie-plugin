@@ -81,6 +81,25 @@ GET https://api.howtofix.id/v1/models
 
 如果上游模型目录失败、返回为空，或不包含 Grok，则回退到内置的 6 个 Grok 模型。
 
+## 余额查询
+
+Magpie 的「用量」Tab 会读取 HowToFix 账户余额：
+
+```text
+GET /api/status
+GET /dashboard/billing/subscription
+GET /dashboard/billing/usage
+```
+
+计算规则与 HowToFix CLI 一致：
+
+- 总额度取 `hard_limit_usd`，缺失时取 `soft_limit_usd`
+- 已用金额为 `total_usage / 100`
+- 剩余金额为 `max(0, 总额度 - 已用金额)`
+- `limit >= 100000000` 显示为 `unlimited`
+
+余额接口失败或登录态失效时，插件会显示可读错误；`401` / `403` 会提示重新运行 `howtofix` 并执行 `/connect`。
+
 ## 请求行为
 
 - API 基址：`https://api.howtofix.id/v1`

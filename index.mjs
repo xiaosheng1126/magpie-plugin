@@ -315,6 +315,120 @@ export function createHowtofixPlugin({
         }
       ],
 
+      async usage(getAuth) {
+        let key = "";
+        try {
+          const auth = typeof getAuth === "function" ? await getAuth() : undefined;
+          const current = selectedAuth(auth);
+          key = current.key;
+          if (!key) {
+            return {
+              error: reconnectError(),
+              signIn: "expired",
+              windows: []
+            };
+          }
+
+          const origin = new URL(HOWTOFIX_BASE_URL).origin;
+          const billingHeaders = {
+            Authorization: `Bearer ${key}`,
+            Accept: "application/json"
+          };
+          const unitRequest = fetchImpl(`${origin}/api/status`, {
+            headers: { Accept: "application/json" },
+            signal: AbortSignal.timeout(15_000)
+          }).then(async (response) => {
+            if (!response.ok) return "USD";
+            const body = await response.json();
+            const unit = body?.data?.quota_display_type;
+            return typeof unit === "string" && unit.trim()
+              ? unit.trim().toUpperCase()
+              : "USD";
+          }).catch(() => "USD");
+
+          const [unit, subscriptionResponse, usageResponse] = await Promise.all([
+            unitRequest,
+            fetchImpl(`${origin}/dashboard/billing/subscription`, {
+              headers: billingHeaders,
+              signal: AbortSignal.timeout(15_000)
+            }),
+            fetchImpl(`${origin}/dashboard/billing/usage`, {
+              headers: billingHeaders,
+              signal: AbortSignal.timeout(15_000)
+            })
+          ]);
+
+          if (
+            subscriptionResponse.status === 401 ||
+            subscriptionResponse.status === 403 ||
+            usageResponse.status === 401 ||
+            usageResponse.status === 403
+          ) {
+            const error = new Error(reconnectError());
+            error.invalidToken = true;
+            throw error;
+          }
+          if (!subscriptionResponse.ok) {
+            throw new Error(
+              `HowToFix /dashboard/billing/subscription 返回 HTTP ${subscriptionResponse.status}`
+            );
+          }
+          if (!usageResponse.ok) {
+            throw new Error(`HowToFix /dashboard/billing/usage 返回 HTTP ${usageResponse.status}`);
+          }
+
+          const subscription = await subscriptionResponse.json();
+          const usageBody = await usageResponse.json();
+          if (!isRecord(subscription)) {
+            throw new Error("HowToFix /dashboard/billing/subscription 返回了无效数据");
+          }
+          if (!isRecord(usageBody)) {
+            throw new Error("HowToFix /dashboard/billing/usage 返回了无效数据");
+          }
+
+          const limit = finiteNumber(subscription.hard_limit_usd ?? subscription.soft_limit_usd);
+          const totalUsage = finiteNumber(usageBody.total_usage);
+          if (limit === null) {
+            throw new Error("HowToFix 余额响应缺少可用总额度");
+          }
+          if (totalUsage === null) {
+            throw new Error("HowToFix 用量响应缺少 total_usage");
+          }
+
+          const unlimited = limit >= 100_000_000;
+          const used = totalUsage / 100;
+          const remaining = Math.max(0, limit - used);
+          const amount = (value) => (
+            unit === "USD"
+              ? `$${value.toFixed(2)}`
+              : `${value.toFixed(2)} ${unit}`
+          );
+          const metadata = isRecord(auth?.metadata) ? auth.metadata : {};
+
+          return {
+            plan: `HowToFix CLI · ${unit}`,
+            user: metadata.display_name || metadata.username || metadata.name || "HowToFix user",
+            windows: [{
+              name: "账户余额",
+              used: unlimited || limit <= 0
+                ? 0
+                : Math.max(0, Math.min(100, (used / limit) * 100)),
+              display: unlimited
+                ? "unlimited"
+                : `${amount(remaining)} 可用 · ${amount(used)} 已用 / ${amount(limit)} 总额`
+            }],
+            signIn: "kept"
+          };
+        } catch (error) {
+          const detail = redact(error?.message || error, [key]);
+          return {
+            error: error?.invalidToken ? detail : `读取 HowToFix 余额失败: ${detail}`,
+            ...(error?.invalidToken ? { signIn: "expired" } : {}),
+            windows: []
+          };
+        }
+      },
+
       async loader(getAuth) {
         const getCurrentAuth = async () => (
           typeof getAuth === "function" ? getAuth() : undefined
