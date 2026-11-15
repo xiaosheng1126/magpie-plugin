@@ -10,7 +10,7 @@ set -eu
 root=$(cd "$(dirname "$0")/.." && pwd)
 cd "$root"
 
-names=${*:-"dl apinex freepi intern"}
+names=${*:-"dl apinex freepi intern clixad"}
 
 if [ -n "$(git status --porcelain)" ]; then
   echo "publish: 工作区不干净，先 commit" >&2
