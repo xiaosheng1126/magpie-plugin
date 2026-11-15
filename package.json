@@ -1,0 +1,26 @@
+{
+  "name": "opencode-clixad-auth",
+  "version": "0.1.0",
+  "description": "Magpie / OpenCode provider plugin for Clixad, reusing the local Clixad CLI login",
+  "type": "module",
+  "main": "./index.mjs",
+  "exports": "./index.mjs",
+  "files": [
+    "index.mjs",
+    "README.md"
+  ],
+  "scripts": {
+    "check": "node --check index.mjs",
+    "test": "node test.mjs"
+  },
+  "keywords": [
+    "magpie",
+    "opencode",
+    "provider",
+    "clixad"
+  ],
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  }
+}
